@@ -8,10 +8,7 @@ export async function POST(req: Request) {
     const { imageBase64 } = await req.json();
 
     if (!imageBase64) {
-      return NextResponse.json(
-        { error: "imageBase64 is required" },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: " is required" }, { status: 400 });
     }
 
     const response = await openai.chat.completions.create({
@@ -19,12 +16,11 @@ export async function POST(req: Request) {
       messages: [
         {
           role: "system",
-          content:
-            "You are an AI assistant that produces a short description (caption) for the given image. Respond only with the caption.",
+          content: " AI .",
         },
         {
           role: "user",
-          content: `Here is a base64 image:\n\n${imageBase64}\n\nGenerate a short caption for this.`,
+          content: `image:\n\n${imageBase64}\n\nGenerate a short caption for this.`,
         },
       ],
     });

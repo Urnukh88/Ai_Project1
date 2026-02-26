@@ -15,11 +15,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY!,
-  dangerouslyAllowBrowser: true,
-});
-
 export const ChatComponent = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [input, setInput] = useState("");
