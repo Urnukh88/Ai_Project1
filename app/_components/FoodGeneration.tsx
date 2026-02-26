@@ -27,6 +27,29 @@ export const FoodGeneration = () => {
     setExtractedInfo([]);
 
     try {
+      const [imageRes, extractRes] = await Promise.all([
+        fetch("/api/generate-image", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ prompt }),
+        }),
+        fetch("/api/extract", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ prompt }),
+        }),
+      ]);
+      const imageData = await imageRes.json();
+      const extractData = await extractRes.json();
+      if (imageData.image) {
+        setResultImage(imageData.image);
+      }
+      if (extractData.result) {
+        setExtractedInfo(extractData.result);
+      }
+      if (!imageData.image && !extractData.result) {
+        throw new Error("Both services failed");
+      }
     } catch (error) {
       console.error("Error:", error);
       setError("Something went wrong. Please try again.");
@@ -47,7 +70,12 @@ export const FoodGeneration = () => {
           className="min-h-[120px]"
         />
 
-        <Button onClick={generateImageAndExtract} disabled={isLoading || !prompt.trim()} className="w-full" variant={isLoading ? "secondary" : "outline"}>
+        <Button
+          onClick={generateImageAndExtract}
+          disabled={isLoading || !prompt.trim()}
+          className="w-full"
+          variant={isLoading ? "secondary" : "outline"}
+        >
           {isLoading ? (
             <>
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -58,7 +86,9 @@ export const FoodGeneration = () => {
           )}
         </Button>
 
-        {error && <div className="p-2 text-red-500 rounded bg-red-50">{error}</div>}
+        {error && (
+          <div className="p-2 text-red-500 rounded bg-red-50">{error}</div>
+        )}
 
         <div className="mt-8">
           {isLoading ? (
@@ -76,7 +106,11 @@ export const FoodGeneration = () => {
               )}
               {resultImage && (
                 <div className="mb-6 overflow-hidden border rounded-lg">
-                  <img src={resultImage || "/placeholder.svg"} alt="Generated image" className="w-full h-auto" />
+                  <img
+                    src={resultImage}
+                    alt="Generated image"
+                    className="w-full h-auto"
+                  />
                 </div>
               )}
             </div>
