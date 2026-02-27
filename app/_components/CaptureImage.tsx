@@ -69,24 +69,24 @@ export function CaptureImage() {
     setCaption(null);
 
     try {
-      const base64Image = image.split(",")[1];
-      const res = await fetch("/api/caption", {
+      const response = await fetch("/api/caption", {
         method: "POST",
-        cache: "no-store",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ imageBase64: base64Image }),
+        body: JSON.stringify({
+          image_url: image,
+        }),
       });
 
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error || "Caption API failed");
-      }
+      const result = await response.json();
 
-      const data = await res.json();
-      setCaption(data.caption);
-    } catch (error: any) {
+      if (result.output) {
+        setCaption(result.output);
+      } else {
+        setCaption("Тайлбар үүсгэж чадсангүй.");
+      }
+    } catch (error) {
       console.error(error);
-      setCaption(error.message || "An error occurred.");
+      setCaption("Холболтын алдаа гарлаа.");
     } finally {
       setIsLoading(false);
     }
