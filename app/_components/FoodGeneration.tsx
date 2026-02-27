@@ -10,6 +10,7 @@ export const FoodGeneration = () => {
   const [prompt, setPrompt] = useState<string>(
     "I just made a delicious plate of Spaghetti Carbonara using spaghetti, eggs, Parmesan cheese, pancetta, black pepper, garlic, and a pinch of salt. The sauce was rich and creamy without using any cream, thanks to the eggs and cheese. The pancetta added a perfect salty crunch, and the garlic brought everything together. It's one of those simple yet satisfying meals that always hits the spot.",
   );
+
   const [resultImage, setResultImage] = useState<string | null>(null);
   const [extractedInfo, setExtractedInfo] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -27,32 +28,33 @@ export const FoodGeneration = () => {
     setExtractedInfo([]);
 
     try {
-      const [imageRes, extractRes] = await Promise.all([
-        fetch("/api/generate-image", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ prompt }),
-        }),
-        fetch("/api/extract", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ prompt }),
-        }),
-      ]);
-      const imageData = await imageRes.json();
+      const extractRes = await fetch("/api/extract", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt }),
+      });
       const extractData = await extractRes.json();
-      if (imageData.image) {
-        setResultImage(imageData.image);
-      }
-      if (extractData.result) {
-        setExtractedInfo(extractData.result);
-      }
-      if (!imageData.image && !extractData.result) {
-        throw new Error("Both services failed");
-      }
-    } catch (error) {
+      if (!extractRes.ok)
+        throw new Error(extractData.error || "Extraction failed");
+
+      const infoArray = extractData.result
+        .split(",")
+        .map((s: string) => s.trim());
+      setExtractedInfo(infoArray);
+
+      const imageRes = await fetch("/api/generate-image", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt: extractData.result }),
+      });
+      const imageData = await imageRes.json();
+      if (!imageRes.ok)
+        throw new Error(imageData.error || "Image generation failed");
+
+      setResultImage(imageData.image);
+    } catch (error: any) {
       console.error("Error:", error);
-      setError("Something went wrong. Please try again.");
+      setError(error.message || "Something went wrong. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -101,13 +103,24 @@ export const FoodGeneration = () => {
               {extractedInfo && (
                 <div className="flex flex-wrap items-center gap-2 p-4 border rounded-lg card">
                   <h2 className="mb-2 text-lg font-semibold">Extracted Info</h2>
-                  {extractedInfo}
+                  <div className="flex flex-wrap gap-2">
+                    {extractedInfo.map((item, index) => (
+                      <Badge
+                        key={index}
+                        variant="secondary"
+                        className="px-3 py-1 text-sm font-medium"
+                      >
+                        {" "}
+                        {item}
+                      </Badge>
+                    ))}
+                  </div>
                 </div>
               )}
               {resultImage && (
                 <div className="mb-6 overflow-hidden border rounded-lg">
                   <img
-                    src={resultImage}
+                    src={resultImage || "/placeholder.svg"}
                     alt="Generated image"
                     className="w-full h-auto"
                   />
